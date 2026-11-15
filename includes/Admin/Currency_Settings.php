@@ -22,7 +22,6 @@ final class Currency_Settings extends \WC_Settings_Page {
 
 		add_action( 'woocommerce_admin_field_payglocal_rate_table', array( $this, 'render_rate_table' ) );
 		add_action( 'woocommerce_update_options_payglocal_currency', array( $this, 'save_rate_table' ) );
-		add_action( 'admin_post_payglocal_refresh_rates', array( $this, 'refresh_rates' ) );
 	}
 
 	/**

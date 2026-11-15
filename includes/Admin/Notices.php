@@ -13,7 +13,7 @@ namespace PayGlocal\Admin;
 final class Notices {
 
 	public static function render(): void {
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		if ( ! Settings_Screen::can_manage() ) {
 			return;
 		}
 
@@ -72,7 +72,7 @@ final class Notices {
 				'public_pem'         => (string) ( $gateway['public_pem'] ?? '' ),
 				'private_pem'        => (string) ( $gateway['private_pem'] ?? '' ),
 				'conversion_enabled' => (string) get_option( 'payglocal_conversion_enabled', 'yes' ),
-				'store_currency'     => (string) get_option( 'woocommerce_currency', 'INR' ),
+				'store_currency'     => class_exists( 'WooCommerce' ) ? (string) get_option( 'woocommerce_currency', 'INR' ) : 'INR',
 				'supported'          => $supported,
 				'rates'              => $rates,
 				'openssl'            => function_exists( 'openssl_pkey_get_public' ),

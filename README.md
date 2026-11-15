@@ -1,6 +1,6 @@
-# PayGlocal for WooCommerce
+# PayGlocal
 
-Storewide currency conversion and PayGlocal checkout for WooCommerce.
+Standalone currency and PayGlocal payments for WordPress. WooCommerce catalog, cart, checkout, and payment features attach when WooCommerce is active. The plugin installs and runs without it.
 
 Product prices stay stored in Indian Rupees. Shoppers see and pay in their local currency when that currency is enabled for the merchant account and an exchange rate is saved. Otherwise they see and pay in INR.
 
@@ -23,7 +23,7 @@ Product prices stay stored in Indian Rupees. Shoppers see and pay in their local
 | Requirement | Detail |
 | --- | --- |
 | WordPress | 6.2 or newer |
-| WooCommerce | 8.2 or newer, tested to 9.4 |
+| WooCommerce | Optional. Tested to 9.4. Price conversion and checkout run when it is active |
 | PHP | 8.0 or newer |
 | PHP extensions | OpenSSL, JSON, and either GMP or BCMath |
 | Store currency | Indian Rupee (INR) |
@@ -46,7 +46,7 @@ A product stored as ₹8,500 stays ₹8,500 in the database. With a USD rate of 
 
 1. Zip the `payglocal` folder, or upload it from **Plugins → Add New Plugin → Upload Plugin**.
 2. Click **Install Now**, then **Activate**.
-3. WooCommerce must already be active. If it is not, the plugin shows an admin error and does not boot.
+3. WooCommerce is optional. The plugin activates on its own. Catalog, cart, checkout, and PayGlocal payment attach when WooCommerce is active.
 
 You can also copy the folder to `wp-content/plugins/payglocal/` and activate it from **Plugins**.
 

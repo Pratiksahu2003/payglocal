@@ -23,6 +23,8 @@ final class Currency_Manager {
 
 	private bool $resolved = false;
 
+	private bool $resolving = false;
+
 	private string $currency = self::BASE;
 
 	private string $country = '';
@@ -65,6 +67,9 @@ final class Currency_Manager {
 	}
 
 	public function boot(): void {
+		if ( $this->resolved || $this->resolving ) {
+			return;
+		}
 		if ( ! $this->is_enabled() ) {
 			$this->currency = self::BASE;
 			$this->country  = '';
@@ -73,18 +78,20 @@ final class Currency_Manager {
 			return;
 		}
 
+		$this->resolving = true;
 		$this->resolve();
+		$this->resolving = false;
 	}
 
 	public function get_active_currency(): string {
-		if ( ! $this->resolved ) {
+		if ( ! $this->resolved && ! $this->resolving ) {
 			$this->boot();
 		}
 		return $this->currency;
 	}
 
 	public function get_country(): string {
-		if ( ! $this->resolved ) {
+		if ( ! $this->resolved && ! $this->resolving ) {
 			$this->boot();
 		}
 		return $this->country;
@@ -171,11 +178,18 @@ final class Currency_Manager {
 			$manual   = 'yes' === (string) $session->get( 'payglocal_manual', '' );
 		}
 
-		if ( '' === $country && '' === $currency && is_user_logged_in() ) {
+		if ( '' === $country && '' === $currency && function_exists( 'is_user_logged_in' ) && is_user_logged_in() ) {
 			$user_id  = get_current_user_id();
 			$country  = strtoupper( (string) get_user_meta( $user_id, '_payglocal_country', true ) );
 			$currency = strtoupper( (string) get_user_meta( $user_id, '_payglocal_currency', true ) );
 			$manual   = 'yes' === (string) get_user_meta( $user_id, '_payglocal_manual', true );
+		}
+
+		if ( '' === $country && '' === $currency ) {
+			$guest    = $this->read_guest();
+			$country  = $guest['country'];
+			$currency = $guest['currency'];
+			$manual   = $guest['manual'];
 		}
 
 		return array(
@@ -215,9 +229,11 @@ final class Currency_Manager {
 			$session->set( 'payglocal_country', $country );
 			$session->set( 'payglocal_currency', $currency );
 			$session->set( 'payglocal_manual', $manual ? 'yes' : 'no' );
+		} else {
+			$this->write_guest( $country, $currency, $manual );
 		}
 
-		if ( is_user_logged_in() ) {
+		if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() ) {
 			$user_id = get_current_user_id();
 			update_user_meta( $user_id, '_payglocal_country', $country );
 			update_user_meta( $user_id, '_payglocal_currency', $currency );
@@ -272,6 +288,92 @@ final class Currency_Manager {
 				'samesite' => 'Lax',
 			)
 		);
+	}
+
+	/**
+	 * Guest choice stored on the server. The currency cookie is still only a cache hint.
+	 *
+	 * @return array{country: string, currency: string, manual: bool}
+	 */
+	private function read_guest(): array {
+		$empty = array(
+			'country'  => '',
+			'currency' => '',
+			'manual'   => false,
+		);
+		if ( ! function_exists( 'get_transient' ) ) {
+			return $empty;
+		}
+		$id = $this->guest_id( false );
+		if ( '' === $id ) {
+			return $empty;
+		}
+		$stored = get_transient( 'payglocal_guest_' . $id );
+		if ( ! is_array( $stored ) ) {
+			return $empty;
+		}
+		$country  = strtoupper( (string) ( $stored['country'] ?? '' ) );
+		$currency = strtoupper( (string) ( $stored['currency'] ?? '' ) );
+		return array(
+			'country'  => preg_match( '/^[A-Z]{2}$/', $country ) ? $country : '',
+			'currency' => preg_match( '/^[A-Z]{3}$/', $currency ) ? $currency : '',
+			'manual'   => 'yes' === (string) ( $stored['manual'] ?? '' ),
+		);
+	}
+
+	private function write_guest( string $country, string $currency, bool $manual ): void {
+		if ( ! function_exists( 'set_transient' ) ) {
+			return;
+		}
+		$id = $this->guest_id( true );
+		if ( '' === $id ) {
+			return;
+		}
+		$ttl = defined( 'MONTH_IN_SECONDS' ) ? MONTH_IN_SECONDS : 2592000;
+		set_transient(
+			'payglocal_guest_' . $id,
+			array(
+				'country'  => $country,
+				'currency' => $currency,
+				'manual'   => $manual ? 'yes' : 'no',
+			),
+			$ttl
+		);
+	}
+
+	private function guest_id( bool $create ): string {
+		$existing = isset( $_COOKIE['payglocal_sid'] ) ? (string) wp_unslash( $_COOKIE['payglocal_sid'] ) : '';
+		if ( function_exists( 'sanitize_text_field' ) ) {
+			$existing = sanitize_text_field( $existing );
+		}
+		if ( preg_match( '/^[a-f0-9]{32}$/', $existing ) ) {
+			return $existing;
+		}
+		if ( ! $create || headers_sent() ) {
+			return '';
+		}
+		try {
+			$id = bin2hex( random_bytes( 16 ) );
+		} catch ( \Throwable $error ) {
+			unset( $error );
+			return '';
+		}
+		$path   = defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/';
+		$secure = function_exists( 'is_ssl' ) ? is_ssl() : false;
+		$ttl    = defined( 'MONTH_IN_SECONDS' ) ? MONTH_IN_SECONDS : 2592000;
+		setcookie(
+			'payglocal_sid',
+			$id,
+			array(
+				'expires'  => time() + $ttl,
+				'path'     => $path,
+				'secure'   => $secure,
+				'httponly' => true,
+				'samesite' => 'Lax',
+			)
+		);
+		$_COOKIE['payglocal_sid'] = $id;
+		return $id;
 	}
 
 	/**

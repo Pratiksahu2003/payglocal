@@ -53,7 +53,7 @@ final class Plugin {
 		$ajax                  = new Ajax( $this->currency, $cart );
 		$store                 = new Store_Api( $this->currency, $this->converter );
 
-		add_action( 'woocommerce_init', array( $this, 'boot_currency' ), 5 );
+		add_action( 'init', array( $this, 'boot_currency' ), 20 );
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_filter( 'woocommerce_payment_gateways', array( $this, 'register_gateway' ) );
 		add_filter( 'woocommerce_get_settings_pages', array( $this, 'register_settings' ) );
@@ -109,8 +109,8 @@ final class Plugin {
 	 * @return array<int, string>
 	 */
 	public function register_gateway( $gateways ) {
-		if ( ! is_array( $gateways ) ) {
-			return $gateways;
+		if ( ! is_array( $gateways ) || ! class_exists( 'WC_Payment_Gateway' ) ) {
+			return is_array( $gateways ) ? $gateways : array();
 		}
 		$gateways[] = Gateway::class;
 		return $gateways;
@@ -121,8 +121,8 @@ final class Plugin {
 	 * @return array<int, object>
 	 */
 	public function register_settings( $pages ) {
-		if ( ! is_array( $pages ) ) {
-			return $pages;
+		if ( ! is_array( $pages ) || ! class_exists( 'WC_Settings_Page' ) ) {
+			return is_array( $pages ) ? $pages : array();
 		}
 		$pages[] = new Currency_Settings();
 		return $pages;

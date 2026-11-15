@@ -15,25 +15,32 @@ use PayGlocal\Currency\Rate_Table;
  */
 final class Settings_Screen {
 
+	public static function can_manage(): bool {
+		return current_user_can( 'manage_options' ) || current_user_can( 'manage_woocommerce' );
+	}
+
 	public static function register_menu(): void {
-		$hook = add_submenu_page(
-			'woocommerce',
+		$cap  = current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'manage_options' ) ? 'manage_woocommerce' : 'manage_options';
+		$hook = add_menu_page(
 			__( 'PayGlocal', 'payglocal' ),
 			__( 'PayGlocal', 'payglocal' ),
-			'manage_woocommerce',
+			$cap,
 			'payglocal',
-			array( self::class, 'render' )
+			array( self::class, 'render' ),
+			'dashicons-money-alt',
+			56
 		);
 		if ( is_string( $hook ) ) {
 			add_action( 'load-' . $hook, array( self::class, 'handle_post' ) );
 		}
+		add_action( 'admin_post_payglocal_refresh_rates', array( self::class, 'refresh_rates' ) );
 	}
 
 	public static function handle_post(): void {
 		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
 			return;
 		}
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		if ( ! self::can_manage() ) {
 			wp_die( esc_html__( 'You cannot manage PayGlocal.', 'payglocal' ) );
 		}
 		check_admin_referer( 'payglocal_save_settings' );
@@ -97,7 +104,7 @@ final class Settings_Screen {
 			'public_pem'         => $gateway['public_pem'],
 			'private_pem'        => $gateway['private_pem'],
 			'conversion_enabled' => $conversion,
-			'store_currency'     => (string) get_option( 'woocommerce_currency', 'INR' ),
+			'store_currency'     => class_exists( 'WooCommerce' ) ? (string) get_option( 'woocommerce_currency', 'INR' ) : 'INR',
 			'supported'          => $supported,
 			'rates'              => $rates,
 			'openssl'            => function_exists( 'openssl_pkey_get_public' ),
@@ -124,8 +131,28 @@ final class Settings_Screen {
 		exit;
 	}
 
+	public static function refresh_rates(): void {
+		if ( ! self::can_manage() ) {
+			wp_die( esc_html__( 'You cannot refresh rates.', 'payglocal' ) );
+		}
+		check_admin_referer( 'payglocal_refresh_rates' );
+		update_option( 'payglocal_rate_mode', 'automatic' );
+		$ok = ( new Exchange_Rates() )->refresh();
+		if ( ! $ok ) {
+			Admin_Flash::add_error( __( 'PayGlocal could not refresh exchange rates. The last cached rates are still in use.', 'payglocal' ) );
+		} else {
+			Admin_Flash::add_success( __( 'Exchange rates refreshed.', 'payglocal' ) );
+		}
+		$redirect = wp_get_referer();
+		if ( ! is_string( $redirect ) || '' === $redirect ) {
+			$redirect = admin_url( 'admin.php?page=payglocal' );
+		}
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
 	public static function render(): void {
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		if ( ! self::can_manage() ) {
 			wp_die( esc_html__( 'You cannot manage PayGlocal.', 'payglocal' ) );
 		}
 

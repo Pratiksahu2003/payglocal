@@ -9,7 +9,7 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Converts WooCommerce prices from stored INR amounts into the shopper's PayGlocal currency and charges that same currency.
+Standalone PayGlocal currency plugin. WooCommerce prices and checkout attach when WooCommerce is active.
 
 == Description ==
 

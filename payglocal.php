@@ -1,15 +1,13 @@
 <?php
 /**
  * Plugin Name: PayGlocal
- * Description: Converts WooCommerce prices into the shopper's PayGlocal currency while product prices stay stored in INR, and charges that same currency at payment.
+ * Description: Standalone PayGlocal currency and payments. Storefront, cart, and checkout features attach when WooCommerce is active. Prices stay stored in INR.
  * Version: 1.0.0
  * Author: VEDMINT CONSULTANCY SERVICES
  * Author URI: https://www.vedmint.com
  * Requires at least: 6.2
  * Requires PHP: 8.0
- * Requires Plugins: woocommerce
  * Text Domain: payglocal
- * WC requires at least: 8.2
  * WC tested up to: 9.4
  *
  * @package PayGlocal
@@ -39,16 +37,6 @@ add_action(
 add_action(
 	'plugins_loaded',
 	static function () {
-		if ( ! class_exists( 'WooCommerce' ) ) {
-			add_action(
-				'admin_notices',
-				static function () {
-					echo '<div class="notice notice-error"><p>' . esc_html__( 'PayGlocal needs WooCommerce to be active.', 'payglocal' ) . '</p></div>';
-				}
-			);
-			return;
-		}
-
 		payglocal();
 	}
 );

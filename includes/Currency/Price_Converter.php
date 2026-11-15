@@ -180,20 +180,40 @@ final class Price_Converter {
 	}
 
 	private function div_round( string $amount, string $divisor, int $decimals ): string {
-		$scale    = $decimals + 6;
-		$quotient = bcdiv( $amount, $divisor, $scale );
-		return $this->round_half_up( $quotient, $decimals );
+		if ( function_exists( 'bcdiv' ) ) {
+			$quotient = bcdiv( $amount, $divisor, $decimals + 6 );
+			return $this->round_half_up( $quotient, $decimals );
+		}
+		if ( ! is_numeric( $amount ) || ! is_numeric( $divisor ) || 0.0 === (float) $divisor ) {
+			return $this->round_half_up( '0', $decimals );
+		}
+		return $this->round_half_up( (string) ( (float) $amount / (float) $divisor ), $decimals );
 	}
 
 	private function mul_round( string $amount, string $factor, int $decimals ): string {
-		$product = bcmul( $amount, $factor, $decimals + 6 );
-		return $this->round_half_up( $product, $decimals );
+		if ( function_exists( 'bcmul' ) ) {
+			$product = bcmul( $amount, $factor, $decimals + 6 );
+			return $this->round_half_up( $product, $decimals );
+		}
+		if ( ! is_numeric( $amount ) || ! is_numeric( $factor ) ) {
+			return $this->round_half_up( '0', $decimals );
+		}
+		return $this->round_half_up( (string) ( (float) $amount * (float) $factor ), $decimals );
 	}
 
 	/**
 	 * Round half away from zero, matching PHP_ROUND_HALF_UP.
 	 */
 	public function round_half_up( string $number, int $decimals ): string {
+		if ( ! function_exists( 'bcadd' ) ) {
+			$places = max( 0, $decimals );
+			$value  = is_numeric( $number ) ? (float) $number : 0.0;
+			$factor = 10 ** $places;
+			$rounded = $value < 0
+				? -1 * ( floor( ( abs( $value ) * $factor ) + 0.5 ) / $factor )
+				: ( floor( ( $value * $factor ) + 0.5 ) / $factor );
+			return number_format( $rounded, $places, '.', '' );
+		}
 		$number   = $this->normalize( $number );
 		$negative = str_starts_with( $number, '-' );
 		if ( $negative ) {

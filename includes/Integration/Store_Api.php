@@ -208,9 +208,13 @@ final class Store_Api {
 		add_action(
 			'woocommerce_blocks_payment_method_type_registration',
 			static function ( $registry ) {
-				if ( is_object( $registry ) && method_exists( $registry, 'register' ) && class_exists( '\PayGlocal\Integration\Blocks_Payment_Method' ) ) {
-					$registry->register( new Blocks_Payment_Method() );
+				if ( ! is_object( $registry ) || ! method_exists( $registry, 'register' ) ) {
+					return;
 				}
+				if ( ! class_exists( '\Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
+					return;
+				}
+				$registry->register( new Blocks_Payment_Method() );
 			}
 		);
 	}
