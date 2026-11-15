@@ -247,25 +247,53 @@ final class Currency_Manager {
 	 * Keep shipping with the detected country until the shopper chooses another address.
 	 */
 	private function align_customer_country( string $country ): void {
-		if ( '' === $country || ! function_exists( 'WC' ) || ! WC()->customer ) {
+		$customer = $this->wc_customer();
+		if ( '' === $country || null === $customer ) {
 			return;
 		}
 
-		$billing = (string) WC()->customer->get_billing_country();
-		$base    = function_exists( 'wc_get_base_location' ) ? wc_get_base_location() : array();
-		$store   = isset( $base['country'] ) ? (string) $base['country'] : '';
+		try {
+			$billing = (string) $customer->get_billing_country();
+			$base    = function_exists( 'wc_get_base_location' ) ? wc_get_base_location() : array();
+			$store   = isset( $base['country'] ) ? (string) $base['country'] : '';
 
-		if ( '' === $billing || $billing === $store ) {
-			$this->sync_customer_country( $country );
+			if ( '' === $billing || $billing === $store ) {
+				$customer->set_billing_country( $country );
+				$customer->set_shipping_country( $country );
+			}
+		} catch ( \Throwable $error ) {
+			unset( $error );
 		}
 	}
 
 	private function sync_customer_country( string $country ): void {
-		if ( ! function_exists( 'WC' ) || ! WC()->customer ) {
+		$customer = $this->wc_customer();
+		if ( null === $customer ) {
 			return;
 		}
-		WC()->customer->set_billing_country( $country );
-		WC()->customer->set_shipping_country( $country );
+		try {
+			$customer->set_billing_country( $country );
+			$customer->set_shipping_country( $country );
+		} catch ( \Throwable $error ) {
+			unset( $error );
+		}
+	}
+
+	/**
+	 * WooCommerce customer, only when its session already exists.
+	 * Touching the customer before that session exists crashes the request.
+	 */
+	private function wc_customer() {
+		if ( null === $this->session() || ! function_exists( 'WC' ) ) {
+			return null;
+		}
+		try {
+			$customer = WC()->customer;
+		} catch ( \Throwable $error ) {
+			unset( $error );
+			return null;
+		}
+		return is_object( $customer ) ? $customer : null;
 	}
 
 	/**

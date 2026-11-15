@@ -94,10 +94,14 @@ final class Plugin {
 	}
 
 	public function boot_currency(): void {
-		$decimals = (int) get_option( 'woocommerce_price_num_decimals', 2 );
-		$this->converter->set_base_decimals( $decimals );
-		$this->converter->set_rates( $this->exchange_rates->all() );
-		$this->currency->boot();
+		try {
+			$decimals = (int) get_option( 'woocommerce_price_num_decimals', 2 );
+			$this->converter->set_base_decimals( $decimals );
+			$this->converter->set_rates( $this->exchange_rates->all() );
+			$this->currency->boot();
+		} catch ( \Throwable $error ) {
+			unset( $error );
+		}
 	}
 
 	public function load_textdomain(): void {
