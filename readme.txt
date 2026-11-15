@@ -20,7 +20,7 @@ Website: https://www.vedmint.com
 
 The conversion covers the homepage, shop, search, product pages, variations, related products, upsells, cross-sells, mini cart, cart, checkout, shipping, taxes, fixed coupons, and WooCommerce Blocks.
 
-Full setup steps are in README.md.
+README.md has the step-by-step setup and every class, function, hook, option, session key, and order field.
 
 == Installation ==
 
@@ -56,6 +56,20 @@ No. PayGlocal is charged the WooCommerce order total in the order currency.
 = What does a shopper see when their currency is not enabled? =
 
 INR. The same fallback is used when an enabled currency has no exchange rate. Japan sees INR while JPY is left unticked.
+
+== Functions ==
+
+Themes and other plugins can call:
+
+* `payglocal()` returns the plugin instance.
+* `payglocal_convert_price( $amount, $currency = null )` converts an INR amount into the active currency without writing the product price.
+* `payglocal_get_currency()` returns the active payment currency for this request.
+
+`payglocal()` also exposes `currency()`, `exchange_rates()`, `converter()`, `switcher()`, `boot_currency()`, `convert_price()`, `register_gateway()`, `register_settings()`, and `plugin_links()`.
+
+Storefront pieces: shortcode `[payglocal_currency_switcher]`, widget PayGlocal Currency, AJAX actions `payglocal_set_country` and `payglocal_set_currency`, cron `payglocal_refresh_exchange_rates`, and payment return hook `woocommerce_api_payglocal`.
+
+README.md lists every method on Country_Currency_Map, Currency_Resolver, Price_Converter, Conversion_Guard, Rate_Table, Exchange_Rates, Currency_Manager, Price_Adjustment, Coupon_Adjustment, Shipping_Adjustment, Price_Filters, Cart_Adjustments, Catalog_Query, Switcher, Switcher_Widget, Ajax, Store_Api, Blocks_Payment_Method, Payment_Charge, Token_Service, Gateway, Config_Check, Admin_Flash, Notices, Settings_Screen, and Currency_Settings.
 
 == Changelog ==
 
