@@ -1,0 +1,56 @@
+.payglocal-switcher {
+	position: fixed;
+	right: 16px;
+	bottom: 16px;
+	z-index: 99990;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 12px;
+	align-items: end;
+	max-width: min(420px, calc(100vw - 32px));
+	padding: 12px;
+	background: #fff;
+	color: #1d2327;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.payglocal-switcher__field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 140px;
+}
+
+.payglocal-switcher select {
+	width: 100%;
+	min-height: 36px;
+}
+
+.payglocal-switcher__status {
+	flex: 1 0 100%;
+	margin: 0;
+}
+
+.payglocal-switcher__status:empty {
+	display: none;
+}
+
+@media (max-width: 600px) {
+	.payglocal-switcher {
+		left: 12px;
+		right: 12px;
+		bottom: 12px;
+		max-width: none;
+	}
+}
+
+body.woocommerce-cart .payglocal-switcher,
+body.woocommerce-checkout .payglocal-switcher {
+	position: static;
+	margin: 16px auto;
+	box-shadow: none;
+}
